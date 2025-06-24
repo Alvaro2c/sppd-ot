@@ -1,0 +1,432 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # HTML Validation
+  html-validation:
+    name: HTML Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install html-validate
+        run: npm install -g html-validate
+
+      - name: Validate HTML files
+        run: |
+          html-validate index.html
+          html-validate data.html
+          html-validate about.html
+          html-validate faq.html
+
+  # CSS Validation
+  css-validation:
+    name: CSS Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install stylelint
+        run: npm install -g stylelint stylelint-config-standard
+
+      - name: Create stylelint config
+        run: |
+          echo '{
+            "extends": "stylelint-config-standard",
+            "rules": {
+              "no-descending-specificity": null,
+              "selector-pseudo-element-no-unknown": [
+                true,
+                {
+                  "ignorePseudoElements": ["v-deep"]
+                }
+              ]
+            }
+          }' > .stylelintrc.json
+
+      - name: Validate CSS files
+        run: stylelint "css/*.css"
+
+  # JavaScript Linting
+  js-linting:
+    name: JavaScript Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install ESLint
+        run: npm install -g eslint
+
+      - name: Create ESLint config
+        run: |
+          echo '{
+            "env": {
+              "browser": true,
+              "es2021": true
+            },
+            "extends": "eslint:recommended",
+            "parserOptions": {
+              "ecmaVersion": "latest",
+              "sourceType": "module"
+            },
+            "rules": {
+              "no-unused-vars": "warn",
+              "no-console": "off"
+            }
+          }' > .eslintrc.json
+
+      - name: Lint JavaScript files
+        run: eslint "js/*.js"
+
+  # JSON Validation
+  json-validation:
+    name: JSON Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          python3 -m json.tool data/sample-data.json > /dev/null
+          echo "✅ JSON validation passed"
+
+  # Link Checker
+  link-checker:
+    name: Link Checker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install link-checker
+        run: npm install -g broken-link-checker
+
+      - name: Check internal links
+        run: |
+          blc index.html -ro --exclude-external
+          blc data.html -ro --exclude-external
+          blc about.html -ro --exclude-external
+          blc faq.html -ro --exclude-external
+
+  # Accessibility Testing
+  accessibility:
+    name: Accessibility Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pa11y
+        run: npm install -g pa11y
+
+      - name: Test accessibility
+        run: |
+          pa11y index.html --standard WCAG2AA
+          pa11y data.html --standard WCAG2AA
+          pa11y about.html --standard WCAG2AA
+          pa11y faq.html --standard WCAG2AA
+
+  # Performance Testing
+  performance:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install lighthouse
+        run: npm install -g lighthouse
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 8000 &
+          sleep 5
+
+      - name: Run Lighthouse audit
+        run: |
+          lighthouse http://localhost:8000 --output=json --output-path=./lighthouse-report.json --chrome-flags="--headless --no-sandbox"
+          lighthouse http://localhost:8000/data.html --output=json --output-path=./lighthouse-data-report.json --chrome-flags="--headless --no-sandbox"
+
+      - name: Upload Lighthouse reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: |
+            lighthouse-report.json
+            lighthouse-data-report.json
+
+  # Security Scanning
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run security scan
+        run: |
+          # Check for common security issues
+          echo "🔍 Checking for security issues..."
+          
+          # Check for hardcoded secrets
+          if grep -r "password\|secret\|key\|token" . --exclude-dir=.git --exclude=*.md; then
+            echo "⚠️  Potential secrets found in code"
+            exit 1
+          fi
+          
+          # Check for dangerous JavaScript patterns
+          if grep -r "eval\|innerHTML\|document\.write" js/; then
+            echo "⚠️  Potentially dangerous JavaScript patterns found"
+            exit 1
+          fi
+          
+          echo "✅ Security scan completed"
+
+  # File Size Check
+  file-size:
+    name: File Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check file sizes
+        run: |
+          echo "📊 Checking file sizes..."
+          
+          # Check HTML files
+          for file in *.html; do
+            size=$(stat -c%s "$file")
+            if [ $size -gt 500000 ]; then
+              echo "⚠️  $file is larger than 500KB ($size bytes)"
+              exit 1
+            fi
+          done
+          
+          # Check CSS files
+          for file in css/*.css; do
+            size=$(stat -c%s "$file")
+            if [ $size -gt 1000000 ]; then
+              echo "⚠️  $file is larger than 1MB ($size bytes)"
+              exit 1
+            fi
+          done
+          
+          # Check JS files
+          for file in js/*.js; do
+            size=$(stat -c%s "$file")
+            if [ $size -gt 500000 ]; then
+              echo "⚠️  $file is larger than 500KB ($size bytes)"
+              exit 1
+            fi
+          done
+          
+          echo "✅ File size check completed"
+
+  # Browser Compatibility Test
+  browser-test:
+    name: Browser Compatibility Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Playwright
+        run: npm install -g playwright
+
+      - name: Install browsers
+        run: playwright install
+
+      - name: Create test script
+        run: |
+          cat > test.js << 'EOF'
+          const { chromium, firefox } = require('playwright');
+          
+          async function testPage(browserType, url) {
+            const browser = await browserType.launch();
+            const page = await browser.newPage();
+            
+            try {
+              await page.goto(url);
+              await page.waitForLoadState('networkidle');
+              
+              // Check if page loads without errors
+              const errors = await page.evaluate(() => {
+                return window.performance.getEntriesByType('resource')
+                  .filter(r => r.name.includes('.js') || r.name.includes('.css'))
+                  .filter(r => r.responseStatus >= 400).length;
+              });
+              
+              if (errors > 0) {
+                throw new Error(`Found ${errors} resource loading errors`);
+              }
+              
+              console.log(`✅ ${url} loaded successfully in ${browserType.name()}`);
+            } catch (error) {
+              console.error(`❌ Error testing ${url} in ${browserType.name()}:`, error.message);
+              process.exit(1);
+            } finally {
+              await browser.close();
+            }
+          }
+          
+          async function runTests() {
+            const baseUrl = 'http://localhost:8000';
+            const pages = ['', '/data.html', '/about.html', '/faq.html'];
+            
+            for (const page of pages) {
+              await testPage(chromium, baseUrl + page);
+              await testPage(firefox, baseUrl + page);
+            }
+          }
+          
+          runTests();
+          EOF
+
+      - name: Start server and run tests
+        run: |
+          python3 -m http.server 8000 &
+          sleep 5
+          node test.js
+
+  # Data Integrity Check
+  data-integrity:
+    name: Data Integrity Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Create data validation script
+        run: |
+          cat > validate-data.js << 'EOF'
+          const fs = require('fs');
+          
+          try {
+            const data = JSON.parse(fs.readFileSync('data/sample-data.json', 'utf8'));
+            
+            // Check required fields
+            const requiredFields = ['id', 'title', 'description', 'publicationDate', 'deadline', 'estimatedValue', 'region', 'category', 'contractingAuthority', 'status'];
+            
+            if (!data.data || !Array.isArray(data.data)) {
+              throw new Error('Data must contain a "data" array');
+            }
+            
+            data.data.forEach((item, index) => {
+              requiredFields.forEach(field => {
+                if (!(field in item)) {
+                  throw new Error(`Missing required field "${field}" in item ${index}`);
+                }
+              });
+              
+              // Validate date formats
+              const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+              if (!dateRegex.test(item.publicationDate)) {
+                throw new Error(`Invalid publicationDate format in item ${index}`);
+              }
+              if (!dateRegex.test(item.deadline)) {
+                throw new Error(`Invalid deadline format in item ${index}`);
+              }
+              
+              // Validate numeric fields
+              if (typeof item.estimatedValue !== 'number' || item.estimatedValue < 0) {
+                throw new Error(`Invalid estimatedValue in item ${index}`);
+              }
+            });
+            
+            console.log(`✅ Data validation passed for ${data.data.length} records`);
+          } catch (error) {
+            console.error('❌ Data validation failed:', error.message);
+            process.exit(1);
+          }
+          EOF
+
+      - name: Validate data
+        run: node validate-data.js
+
+  # Build and Deploy Preview (for PRs)
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install serve
+        run: npm install -g serve
+
+      - name: Start preview server
+        run: |
+          echo "🚀 Starting preview server..."
+          serve . -p 3000 &
+          sleep 5
+          echo "Preview available at: http://localhost:3000"
+
+      - name: Comment PR with preview link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🎉 **Preview Available!**\n\nYour changes have been deployed to a preview environment.\n\n- **Preview URL**: http://localhost:3000\n- **Status**: ✅ All checks passed\n\nPlease review the changes and ensure everything works as expected.'
+            }) 

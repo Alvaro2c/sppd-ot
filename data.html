@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datos y Análisis - SPPD</title>
+    <meta name="description" content="Explora datos detallados de contratación pública española con filtros avanzados, tablas interactivas y análisis visuales.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+</head>
+<body>
+    <!-- Add loading state immediately -->
+    <script>
+        document.documentElement.classList.add('fonts-loading');
+    </script>
+
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <div class="nav-brand">
+                <h1>SPPD</h1>
+                <span>Licitaciones Abiertas</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="data.html" class="active"><i class="fas fa-chart-bar"></i> Data & Analytics</a></li>
+                <li><a href="about.html"><i class="fas fa-info-circle"></i> About</a></li>
+                <li><a href="contact.html"><i class="fas fa-question-circle"></i> FAQ</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <div class="container">
+            <a href="index.html">Home</a> / <span>Datos y Análisis</span>
+        </div>
+    </div>
+
+    <!-- Section Navigation -->
+    <section class="section-nav">
+        <div class="container">
+            <div class="section-tabs">
+                <button class="tab-button active" data-tab="data-section">
+                    <i class="fas fa-table"></i>
+                    Tabla de Datos
+                </button>
+                <button class="tab-button" data-tab="analytics-section">
+                    <i class="fas fa-chart-bar"></i>
+                    Análisis
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filters Toggle -->
+    <section class="filters-toggle">
+        <div class="container">
+            <button id="filter-toggle" class="btn btn-secondary">
+                <i class="fas fa-filter"></i>
+                Mostrar Filtros
+            </button>
+        </div>
+    </section>
+
+    <!-- Filters Section (Hidden by default) -->
+    <section class="filters-section" id="filter-section" style="display: none;">
+        <div class="container">
+            <h2>Filtros de Datos</h2>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="date-range">Rango de Fechas</label>
+                    <select id="date-range">
+                        <option value="">Todas las Fechas</option>
+                        <option value="last-30">Últimos 30 Días</option>
+                        <option value="last-90">Últimos 90 Días</option>
+                        <option value="last-year">Último Año</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="value-range">Rango de Valor (€)</label>
+                    <select id="value-range">
+                        <option value="">Todos los Valores</option>
+                        <option value="0-10000">€0 - €10,000</option>
+                        <option value="10000-50000">€10,000 - €50,000</option>
+                        <option value="50000-200000">€50,000 - €200,000</option>
+                        <option value="200000-1000000">€200,000 - €1M</option>
+                        <option value="1000000+">€1M+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="region">Región</label>
+                    <select id="region">
+                        <option value="">Todas las Regiones</option>
+                        <option value="Madrid">Madrid</option>
+                        <option value="Cataluña">Cataluña</option>
+                        <option value="Andalucía">Andalucía</option>
+                        <option value="Valencia">Valencia</option>
+                        <option value="Castilla y León">Castilla y León</option>
+                        <option value="Galicia">Galicia</option>
+                        <option value="País Vasco">País Vasco</option>
+                        <option value="Aragón">Aragón</option>
+                        <option value="Castilla-La Mancha">Castilla-La Mancha</option>
+                        <option value="Murcia">Murcia</option>
+                        <option value="Asturias">Asturias</option>
+                        <option value="Extremadura">Extremadura</option>
+                        <option value="Cantabria">Cantabria</option>
+                        <option value="La Rioja">La Rioja</option>
+                        <option value="Navarra">Navarra</option>
+                        <option value="Islas Baleares">Islas Baleares</option>
+                        <option value="Canarias">Canarias</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="category">Categoría</label>
+                    <select id="category">
+                        <option value="">Todas las Categorías</option>
+                        <option value="Construction">Construcción</option>
+                        <option value="IT Services">Servicios IT</option>
+                        <option value="Healthcare">Sanidad</option>
+                        <option value="Education">Educación</option>
+                        <option value="Transportation">Transporte</option>
+                        <option value="Energy">Energía</option>
+                        <option value="Security">Seguridad</option>
+                        <option value="Consulting">Consultoría</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="search">Buscar</label>
+                    <input type="text" id="search" placeholder="Buscar títulos de licitaciones...">
+                </div>
+                <div class="filter-actions">
+                    <button id="apply-filters" class="btn btn-primary">Aplicar Filtros</button>
+                    <button id="clear-filters" class="btn btn-secondary">Limpiar Todo</button>
+                </div>
+            </div>
+            <div class="filter-results">
+                <span id="results-count">Mostrando todos los resultados</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Table Section -->
+    <section class="data-table-section tab-content active" id="data-section">
+        <div class="container">
+            <div class="table-header">
+                <h2>Datos de Contratación</h2>
+                <div class="table-actions">
+                    <button id="export-csv" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </button>
+                    <button id="export-json" class="btn btn-secondary">
+                        <i class="fas fa-code"></i> Exportar JSON
+                    </button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="id">ID Licitación <i class="fas fa-sort"></i></th>
+                            <th data-sort="title">Título <i class="fas fa-sort"></i></th>
+                            <th data-sort="region">Región <i class="fas fa-sort"></i></th>
+                            <th data-sort="category">Categoría <i class="fas fa-sort"></i></th>
+                            <th data-sort="estimatedValue">Valor Est. (€) <i class="fas fa-sort"></i></th>
+                            <th data-sort="publicationDate">Publicación <i class="fas fa-sort"></i></th>
+                            <th data-sort="deadline">Fecha Límite <i class="fas fa-sort"></i></th>
+                            <th data-sort="status">Estado <i class="fas fa-sort"></i></th>
+                            <th data-sort="bidders">Licitadores <i class="fas fa-sort"></i></th>
+                            <th data-sort="awardedValue">Adjudicado (€) <i class="fas fa-sort"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <button id="prev-page" class="btn btn-secondary">Anterior</button>
+                <span id="page-info">Página 1 de 1</span>
+                <button id="next-page" class="btn btn-secondary">Siguiente</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics Section -->
+    <section class="analytics-section tab-content" id="analytics-section">
+        <div class="container">
+            <h2>Análisis de Datos</h2>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>Distribución por Regiones</h3>
+                    <canvas id="region-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Distribución por Categorías</h3>
+                    <canvas id="category-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Top 10 Licitaciones por Valor</h3>
+                    <canvas id="value-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Distribución por Estado</h3>
+                    <canvas id="status-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>SPPD Licitaciones Abiertas</h3>
+                    <p>Acceso transparente a datos de contratación pública española para empresas, investigadores y ciudadanos.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 SPPD</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/charts.js"></script>
+</body>
+</html> 
