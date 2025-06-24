@@ -1,9 +1,10 @@
-name: Deploy to GitHub Pages
+name: CI and Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
 
 permissions:
   contents: read
@@ -15,133 +16,194 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Build and Deploy
-  deploy:
-    name: Deploy to GitHub Pages
+  html-validation:
+    name: HTML Validation
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+      - run: npm install -g html-validate
+      - run: |
+          html-validate index.html
+          html-validate data.html
+          html-validate about.html
+          html-validate faq.html
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run validation checks
-        run: |
-          echo "🔍 Running validation checks..."
-          npm run validate:json
-          npm run validate:data
-          npm run lint:html
-          echo "✅ All validation checks passed"
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  # Post-deployment checks
-  post-deploy-checks:
-    name: Post-deployment Checks
+  css-validation:
+    name: CSS Validation
     runs-on: ubuntu-latest
-    needs: deploy
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
+      - run: npm install -g stylelint stylelint-config-standard
+      - run: |
+          echo '{
+            "extends": "stylelint-config-standard",
+            "rules": {
+              "no-descending-specificity": null,
+              "selector-pseudo-element-no-unknown": [
+                true,
+                { "ignorePseudoElements": ["v-deep"] }
+              ]
+            }
+          }' > .stylelintrc.json
+      - run: stylelint "css/*.css"
 
-      - name: Install Playwright
-        run: npm install -g playwright
+  js-linting:
+    name: JavaScript Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm install -g eslint
+      - run: |
+          echo '{
+            "env": { "browser": true, "es2021": true },
+            "extends": "eslint:recommended",
+            "parserOptions": { "ecmaVersion": "latest", "sourceType": "module" },
+            "rules": { "no-unused-vars": "warn", "no-console": "off" }
+          }' > .eslintrc.json
+      - run: eslint "js/*.js"
 
-      - name: Install browsers
-        run: playwright install
+  json-validation:
+    name: JSON Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m json.tool data/sample-data.json > /dev/null
 
-      - name: Wait for deployment
-        run: sleep 30
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          echo "🔍 Checking for security issues..."
+          if grep -r "password\|secret\|key\|token" . --exclude-dir=.git --exclude=*.md; then
+            echo "⚠️  Potential secrets found in code"; exit 1; fi
+          if grep -r "eval\|innerHTML\|document\.write" js/; then
+            echo "⚠️  Potentially dangerous JavaScript patterns found"; exit 1; fi
+          echo "✅ Security scan completed"
 
-      - name: Test deployed site
-        run: |
-          cat > test-deployed.js << 'EOF'
+  file-size:
+    name: File Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for file in *.html; do size=$(stat -c%s "$file"); if [ $size -gt 500000 ]; then echo "⚠️  $file is larger than 500KB ($size bytes)"; exit 1; fi; done
+          for file in css/*.css; do size=$(stat -c%s "$file"); if [ $size -gt 1000000 ]; then echo "⚠️  $file is larger than 1MB ($size bytes)"; exit 1; fi; done
+          for file in js/*.js; do size=$(stat -c%s "$file"); if [ $size -gt 500000 ]; then echo "⚠️  $file is larger than 500KB ($size bytes)"; exit 1; fi; done
+
+  data-integrity:
+    name: Data Integrity Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: |
+          cat > validate-data.js << 'EOF'
+          const fs = require('fs');
+          try {
+            const data = JSON.parse(fs.readFileSync('data/sample-data.json', 'utf8'));
+            const requiredFields = ['id', 'title', 'description', 'publicationDate', 'deadline', 'estimatedValue', 'region', 'category', 'contractingAuthority', 'status'];
+            if (!data.data || !Array.isArray(data.data)) throw new Error('Data must contain a "data" array');
+            data.data.forEach((item, index) => {
+              requiredFields.forEach(field => { if (!(field in item)) throw new Error(`Missing required field "${field}" in item ${index}`); });
+              const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+              if (!dateRegex.test(item.publicationDate)) throw new Error(`Invalid publicationDate format in item ${index}`);
+              if (!dateRegex.test(item.deadline)) throw new Error(`Invalid deadline format in item ${index}`);
+              if (typeof item.estimatedValue !== 'number' || item.estimatedValue < 0) throw new Error(`Invalid estimatedValue in item ${index}`);
+            });
+            console.log(`✅ Data validation passed for ${data.data.length} records`);
+          } catch (error) {
+            console.error('❌ Data validation failed:', error.message);
+            process.exit(1);
+          }
+          EOF
+      - run: node validate-data.js
+
+  browser-test:
+    name: Basic Browser Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm install -g playwright
+      - run: playwright install
+      - run: |
+          cat > test.js << 'EOF'
           const { chromium } = require('playwright');
-          
-          async function testDeployedSite() {
+          async function testPage(url) {
             const browser = await chromium.launch();
             const page = await browser.newPage();
-            
             try {
-              const baseUrl = '${{ needs.deploy.outputs.page_url }}';
-              const pages = ['', '/data.html', '/about.html', '/faq.html'];
-              
-              for (const pagePath of pages) {
-                const url = baseUrl + pagePath;
-                console.log(`Testing: ${url}`);
-                
-                await page.goto(url);
-                await page.waitForLoadState('networkidle');
-                
-                // Check for JavaScript errors
-                const errors = await page.evaluate(() => {
-                  return window.performance.getEntriesByType('resource')
-                    .filter(r => r.name.includes('.js') || r.name.includes('.css'))
-                    .filter(r => r.responseStatus >= 400).length;
-                });
-                
-                if (errors > 0) {
-                  throw new Error(`Found ${errors} resource loading errors on ${url}`);
-                }
-                
-                // Check if page title is present
-                const title = await page.title();
-                if (!title || title.trim() === '') {
-                  throw new Error(`Missing page title on ${url}`);
-                }
-                
-                console.log(`✅ ${url} - Title: "${title}"`);
-              }
-              
-              console.log('🎉 All deployed pages tested successfully!');
+              await page.goto(url);
+              await page.waitForLoadState('networkidle');
+              const errors = await page.evaluate(() => {
+                return window.performance.getEntriesByType('resource')
+                  .filter(r => r.name.includes('.js') || r.name.includes('.css'))
+                  .filter(r => r.responseStatus >= 400).length;
+              });
+              if (errors > 0) throw new Error(`Found ${errors} resource loading errors`);
+              console.log(`✅ ${url} loaded successfully`);
             } catch (error) {
-              console.error('❌ Deployment test failed:', error.message);
+              console.error(`❌ Error testing ${url}:`, error.message);
               process.exit(1);
             } finally {
               await browser.close();
             }
           }
-          
-          testDeployedSite();
+          async function runTests() {
+            const baseUrl = 'http://localhost:8000';
+            const pages = ['', '/data.html', '/about.html', '/faq.html'];
+            for (const page of pages) { await testPage(baseUrl + page); }
+          }
+          runTests();
           EOF
-          
-          node test-deployed.js
+      - run: |
+          python3 -m http.server 8000 &
+          sleep 5
+          node test.js
 
-      - name: Comment deployment status
-        uses: actions/github-script@v7
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs:
+      - html-validation
+      - css-validation
+      - js-linting
+      - json-validation
+      - security
+      - file-size
+      - data-integrity
+      - browser-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          script: |
-            const deploymentUrl = '${{ needs.deploy.outputs.page_url }}';
-            const runId = context.runId;
-            
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number || 0,
-              body: `🚀 **Deployment Successful!**\n\nYour changes have been deployed to GitHub Pages.\n\n- **Live URL**: ${deploymentUrl}\n- **Deployment ID**: ${runId}\n- **Status**: ✅ All post-deployment checks passed\n\nThe website is now live and accessible to users.`
-            }); 
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Deployment success
+        run: |
+          echo "🚀 Deployment completed successfully!"
+          echo "Live URL: ${{ steps.deployment.outputs.page_url }}" 
