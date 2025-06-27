@@ -8,14 +8,14 @@ function initCharts() {
     if (chartsInitialized) return;
     
     // Wait for data to be loaded from JSON file
-    if (window.SPPDData && window.SPPDData.isDataLoaded() && window.sampleData) {
-        createCharts(window.sampleData);
+    if (window.SPPDData && window.SPPDData.isDataLoaded() && window.openTendersData) {
+        createCharts(transformDataForCharts(window.openTendersData));
         chartsInitialized = true;
     } else {
         // If data is not loaded yet, wait for it
         const checkDataInterval = setInterval(() => {
-            if (window.SPPDData && window.SPPDData.isDataLoaded() && window.sampleData) {
-                createCharts(window.sampleData);
+            if (window.SPPDData && window.SPPDData.isDataLoaded() && window.openTendersData) {
+                createCharts(transformDataForCharts(window.openTendersData));
                 chartsInitialized = true;
                 clearInterval(checkDataInterval);
             }
@@ -23,17 +23,47 @@ function initCharts() {
     }
 }
 
+// Transform data to match the expected chart structure
+function transformDataForCharts(data) {
+    return data.map(item => ({
+        id: item.ID || '',
+        title: item.title || '',
+        description: item.title || '',
+        publicationDate: item.updated ? new Date(item.updated).toISOString().split('T')[0] : '',
+        deadline: item.ProcessEndDate || '',
+        estimatedValue: parseFloat(item.EstimatedAmount || item.TotalAmount || 0),
+        city: item.City || '',
+        category: item.CPVCode || '',
+        contractingAuthority: item.ContractingParty || '',
+        link: item.link || ''
+    }));
+}
+
+// Helper function to map status codes to readable status
+function getStatusFromCode(statusCode) {
+    const statusMap = {
+        'PUB': 'Published',
+        'AWD': 'Awarded',
+        'CAN': 'Cancelled',
+        'CLO': 'Closed',
+        'ACT': 'Active',
+        'SUS': 'Suspended'
+    };
+    
+    return statusMap[statusCode] || 'Unknown';
+}
+
 function createCharts(data) {
-    // Region distribution chart
-    const regionCtx = document.getElementById('region-chart');
-    if (regionCtx) {
-        const regionData = getRegionData(data);
-        charts.region = new Chart(regionCtx, {
+    // City distribution chart (previously region)
+    const cityCtx = document.getElementById('region-chart');
+    if (cityCtx) {
+        const cityData = getCityData(data);
+        charts.city = new Chart(cityCtx, {
             type: 'doughnut',
             data: {
-                labels: regionData.labels,
+                labels: cityData.labels,
                 datasets: [{
-                    data: regionData.values,
+                    data: cityData.values,
                     backgroundColor: [
                         '#1a365d', '#2d5a87', '#4a90e2', '#7bb3f0', '#a8d1ff',
                         '#d4e6ff', '#e3f2fd', '#f5f9ff', '#ffffff', '#f8f9fa'
@@ -184,66 +214,17 @@ function createCharts(data) {
             }
         });
     }
-
-    // Status distribution chart
-    const statusCtx = document.getElementById('status-chart');
-    if (statusCtx) {
-        const statusData = getStatusData(data);
-        charts.status = new Chart(statusCtx, {
-            type: 'pie',
-            data: {
-                labels: statusData.labels,
-                datasets: [{
-                    data: statusData.values,
-                    backgroundColor: [
-                        '#4caf50', // Active - Green
-                        '#2196f3', // Awarded - Blue
-                        '#ff9800', // Closed - Orange
-                        '#f44336'  // Cancelled - Red
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true,
-                            font: {
-                                family: 'Roboto, sans-serif',
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return `${context.label}: ${context.parsed} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
 }
 
 function updateCharts(data) {
     if (!chartsInitialized) return;
     
-    // Update region chart
-    if (charts.region) {
-        const regionData = getRegionData(data);
-        charts.region.data.labels = regionData.labels;
-        charts.region.data.datasets[0].data = regionData.values;
-        charts.region.update();
+    // Update city chart (previously region)
+    if (charts.city) {
+        const cityData = getCityData(data);
+        charts.city.data.labels = cityData.labels;
+        charts.city.data.datasets[0].data = cityData.values;
+        charts.city.update();
     }
 
     // Update category chart
@@ -261,25 +242,17 @@ function updateCharts(data) {
         charts.value.data.datasets[0].data = valueData.values;
         charts.value.update();
     }
-
-    // Update status chart
-    if (charts.status) {
-        const statusData = getStatusData(data);
-        charts.status.data.labels = statusData.labels;
-        charts.status.data.datasets[0].data = statusData.values;
-        charts.status.update();
-    }
 }
 
-function getRegionData(data) {
-    const regionCount = {};
+function getCityData(data) {
+    const cityCount = {};
     data.forEach(item => {
-        regionCount[item.region] = (regionCount[item.region] || 0) + 1;
+        cityCount[item.city] = (cityCount[item.city] || 0) + 1;
     });
     
     return {
-        labels: Object.keys(regionCount),
-        values: Object.values(regionCount)
+        labels: Object.keys(cityCount),
+        values: Object.values(cityCount)
     };
 }
 
@@ -305,18 +278,6 @@ function getValueData(data) {
     return {
         labels: sortedData.map(item => truncateText(item.title, 30)),
         values: sortedData.map(item => item.estimatedValue)
-    };
-}
-
-function getStatusData(data) {
-    const statusCount = {};
-    data.forEach(item => {
-        statusCount[item.status] = (statusCount[item.status] || 0) + 1;
-    });
-    
-    return {
-        labels: Object.keys(statusCount),
-        values: Object.values(statusCount)
     };
 }
 

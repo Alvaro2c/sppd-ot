@@ -90,7 +90,7 @@ sppd-ot/
 │   ├── filters.js          # Data filtering logic (443 lines)
 │   └── data.js             # Data loading and management (93 lines)
 ├── data/
-│   └── sample-data.json    # Sample procurement data (390 lines, 20 records)
+│   └── open_tenders.json    # Open tenders data (real procurement data)
 ├── images/                 # Image assets (empty - favicon planned)
 ├── .gitignore              # Git ignore rules (160 lines)
 ├── LICENSE                 # MIT License
@@ -173,7 +173,7 @@ sppd-ot/
 ### Updating Data
 
 1. **Modify sample data**:
-   - Edit `data/sample-data.json` for JSON data
+   - Edit `data/open_tenders.json` for JSON data
    - Update the `data` array with your new records
    - Ensure proper JSON structure with metadata
 

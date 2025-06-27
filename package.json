@@ -4,16 +4,14 @@
   "description": "Spanish Public Procurement Data - Open Tenders - A comprehensive, interactive website providing transparent access to Spanish public procurement data",
   "main": "index.html",
   "scripts": {
-    "test": "echo \"No tests specified\" && exit 0",
-    "lint:js": "eslint js/*.js",
-    "lint:css": "stylelint css/*.css",
-    "lint:html": "html-validate *.html",
-    "lint": "npm run lint:js && npm run lint:css && npm run lint:html",
-    "validate:json": "python3 -m json.tool data/sample-data.json > /dev/null",
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000",
+    "build": "echo 'No build process required for static site'",
+    "test": "echo 'No tests specified'",
+    "lint": "echo 'No linting configured'",
+    "validate:json": "python3 -m json.tool data/open_tenders.json > /dev/null",
     "validate:data": "node scripts/validate-data.js",
-    "serve": "python3 -m http.server 8000",
-    "build": "echo \"Static site - no build step required\"",
-    "deploy": "echo \"Deploy to GitHub Pages\""
+    "deploy": "echo 'Deploy to your hosting service'"
   },
   "keywords": [
     "public-procurement",

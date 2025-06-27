@@ -24,10 +24,26 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initDataTable() {
-    if (!dataInitialized && window.sampleData) {
-        currentData = [...window.sampleData];
-        filteredData = [...window.sampleData];
+    if (!dataInitialized && window.openTendersData) {
+        // Transform the data to match the expected UI structure
+        currentData = window.openTendersData.map(item => ({
+            id: item.ID || '',
+            title: item.title || '',
+            description: item.title || '', // Using title as description since description field doesn't exist
+            publicationDate: item.updated ? new Date(item.updated).toISOString().split('T')[0] : '',
+            updated: item.updated ? new Date(item.updated).toISOString().split('T')[0] : '',
+            deadline: item.ProcessEndDate || '',
+            estimatedValue: parseFloat(item.EstimatedAmount || item.TotalAmount || 0),
+            city: item.City || '',
+            category: item.CPVCode || '',
+            contractingAuthority: item.ContractingParty || '',
+            link: item.link || ''
+        }));
+        filteredData = [...currentData];
         dataInitialized = true;
+        
+        // Populate filter dropdowns with actual data
+        populateFilterDropdowns();
     }
     
     renderTable();
@@ -75,8 +91,8 @@ function applyFilters() {
             return false;
         }
         
-        // Region filter
-        if (region && item.region !== region) {
+        // City filter (previously region)
+        if (region && item.city !== region) {
             return false;
         }
         
@@ -152,7 +168,7 @@ function searchInItem(item, searchTerm) {
         item.title.toLowerCase().includes(searchTerm) ||
         item.description.toLowerCase().includes(searchTerm) ||
         item.contractingAuthority.toLowerCase().includes(searchTerm) ||
-        item.region.toLowerCase().includes(searchTerm) ||
+        item.city.toLowerCase().includes(searchTerm) ||
         item.category.toLowerCase().includes(searchTerm)
     );
 }
@@ -194,14 +210,14 @@ function renderTable() {
         row.innerHTML = `
             <td>${item.id}</td>
             <td>${truncateText(item.title, 60)}</td>
-            <td>${item.region}</td>
+            <td>${item.city}</td>
             <td>${item.category}</td>
             <td>€${formatNumber(item.estimatedValue)}</td>
             <td>${formatDate(item.publicationDate)}</td>
             <td>${formatDate(item.deadline)}</td>
-            <td><span class="status-badge status-${item.status.toLowerCase()}">${item.status}</span></td>
-            <td>${item.bidders}</td>
-            <td>${item.awardedValue ? '€' + formatNumber(item.awardedValue) : '-'}</td>
+            <td>${formatDate(item.updated)}</td>
+            <td>${truncateText(item.contractingAuthority, 40)}</td>
+            <td><a href="${item.link}" target="_blank" class="btn btn-sm btn-primary">Ver</a></td>
         `;
         tableBody.appendChild(row);
     });
@@ -330,24 +346,36 @@ function initExportFunctions() {
 }
 
 function exportToCSV() {
-    const headers = ['ID', 'Title', 'Region', 'Category', 'Estimated Value', 'Publication Date', 'Deadline', 'Status', 'Bidders', 'Awarded Value'];
+    const headers = [
+        'ID Licitación',
+        'Título',
+        'Ciudad',
+        'Categoría',
+        'Valor Estimado (€)',
+        'Fecha Publicación',
+        'Fecha Límite',
+        'Actualizado',
+        'Autoridad Contratante',
+        'Enlace'
+    ];
+    
     const csvContent = [
         headers.join(','),
         ...filteredData.map(item => [
-            item.id,
+            `"${item.id}"`,
             `"${item.title}"`,
-            item.region,
+            item.city,
             item.category,
             item.estimatedValue,
             item.publicationDate,
             item.deadline,
-            item.status,
-            item.bidders,
-            item.awardedValue || ''
+            item.updated,
+            `"${item.contractingAuthority}"`,
+            item.link
         ].join(','))
     ].join('\n');
     
-    downloadFile(csvContent, 'sppd-data.csv', 'text/csv');
+    downloadFile(csvContent, 'licitaciones_abiertas.csv', 'text/csv');
 }
 
 function exportToJSON() {
@@ -440,4 +468,59 @@ window.SPPDFilters = {
     exportToCSV,
     exportToJSON,
     initDataTable
-}; 
+};
+
+// Helper function to map status codes to readable status
+function getStatusFromCode(statusCode) {
+    const statusMap = {
+        'PUB': 'Published',
+        'AWD': 'Awarded',
+        'CAN': 'Cancelled',
+        'CLO': 'Closed',
+        'ACT': 'Active',
+        'SUS': 'Suspended'
+    };
+    
+    return statusMap[statusCode] || 'Unknown';
+}
+
+// Populate filter dropdowns with actual data from JSON
+function populateFilterDropdowns() {
+    // Populate region dropdown
+    const regionSelect = document.getElementById('region');
+    if (regionSelect && window.regions) {
+        // Keep the first option (default)
+        const defaultOption = regionSelect.querySelector('option[value=""]');
+        regionSelect.innerHTML = '';
+        if (defaultOption) {
+            regionSelect.appendChild(defaultOption);
+        }
+        
+        // Add options from actual data
+        window.regions.forEach(region => {
+            const option = document.createElement('option');
+            option.value = region;
+            option.textContent = region;
+            regionSelect.appendChild(option);
+        });
+    }
+    
+    // Populate category dropdown
+    const categorySelect = document.getElementById('category');
+    if (categorySelect && window.categories) {
+        // Keep the first option (default)
+        const defaultOption = categorySelect.querySelector('option[value=""]');
+        categorySelect.innerHTML = '';
+        if (defaultOption) {
+            categorySelect.appendChild(defaultOption);
+        }
+        
+        // Add options from actual data
+        window.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+    }
+} 

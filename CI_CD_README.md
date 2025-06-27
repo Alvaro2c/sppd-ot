@@ -130,7 +130,7 @@ Automatically deploys to GitHub Pages when changes are pushed to the main branch
     "lint:js": "eslint js/*.js",
     "lint:css": "stylelint css/*.css",
     "lint:html": "html-validate *.html",
-    "validate:json": "python3 -m json.tool data/sample-data.json",
+    "validate:json": "python3 -m json.tool data/open_tenders.json",
     "validate:data": "node scripts/validate-data.js"
   }
 }

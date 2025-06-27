@@ -112,9 +112,9 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label for="region">Región</label>
+                    <label for="region">Ciudad</label>
                     <select id="region">
-                        <option value="">Todas las Regiones</option>
+                        <option value="">Todas las Ciudades</option>
                         <option value="Madrid">Madrid</option>
                         <option value="Cataluña">Cataluña</option>
                         <option value="Andalucía">Andalucía</option>
@@ -183,14 +183,14 @@
                         <tr>
                             <th data-sort="id">ID Licitación <i class="fas fa-sort"></i></th>
                             <th data-sort="title">Título <i class="fas fa-sort"></i></th>
-                            <th data-sort="region">Región <i class="fas fa-sort"></i></th>
+                            <th data-sort="city">Ciudad <i class="fas fa-sort"></i></th>
                             <th data-sort="category">Categoría <i class="fas fa-sort"></i></th>
                             <th data-sort="estimatedValue">Valor Est. (€) <i class="fas fa-sort"></i></th>
                             <th data-sort="publicationDate">Publicación <i class="fas fa-sort"></i></th>
                             <th data-sort="deadline">Fecha Límite <i class="fas fa-sort"></i></th>
-                            <th data-sort="status">Estado <i class="fas fa-sort"></i></th>
-                            <th data-sort="bidders">Licitadores <i class="fas fa-sort"></i></th>
-                            <th data-sort="awardedValue">Adjudicado (€) <i class="fas fa-sort"></i></th>
+                            <th data-sort="updated">Actualizado <i class="fas fa-sort"></i></th>
+                            <th data-sort="contractingAuthority">Autoridad Contratante <i class="fas fa-sort"></i></th>
+                            <th data-sort="link">Enlace <i class="fas fa-sort"></i></th>
                         </tr>
                     </thead>
                     <tbody id="table-body">
@@ -212,7 +212,7 @@
             <h2>Análisis de Datos</h2>
             <div class="charts-grid">
                 <div class="chart-container">
-                    <h3>Distribución por Regiones</h3>
+                    <h3>Distribución por Ciudades</h3>
                     <canvas id="region-chart"></canvas>
                 </div>
                 <div class="chart-container">
@@ -222,10 +222,6 @@
                 <div class="chart-container">
                     <h3>Top 10 Licitaciones por Valor</h3>
                     <canvas id="value-chart"></canvas>
-                </div>
-                <div class="chart-container">
-                    <h3>Distribución por Estado</h3>
-                    <canvas id="status-chart"></canvas>
                 </div>
             </div>
         </div>

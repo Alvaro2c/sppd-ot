@@ -109,13 +109,27 @@ function initScrollEffects() {
 
 // Initialize preview data on home page
 function initPreviewData() {
-    if (!window.sampleData || window.sampleData.length === 0) return;
+    if (!window.openTendersData || window.openTendersData.length === 0) return;
     
     const previewContainer = document.getElementById('preview-data');
     if (!previewContainer) return;
     
+    // Transform data to match expected structure
+    const transformedData = window.openTendersData.map(item => ({
+        id: item.ID || '',
+        title: item.title || '',
+        description: item.title || '',
+        publicationDate: item.updated ? new Date(item.updated).toISOString().split('T')[0] : '',
+        deadline: item.ProcessEndDate || '',
+        estimatedValue: parseFloat(item.EstimatedAmount || item.TotalAmount || 0),
+        city: item.City || '',
+        category: item.CPVCode || '',
+        contractingAuthority: item.ContractingParty || '',
+        link: item.link || ''
+    }));
+    
     // Get latest 3 tenders
-    const latestTenders = window.sampleData
+    const latestTenders = transformedData
         .sort((a, b) => new Date(b.publicationDate) - new Date(a.publicationDate))
         .slice(0, 3);
     
@@ -126,14 +140,27 @@ function initPreviewData() {
         tenderCard.className = 'tender-card';
         tenderCard.innerHTML = `
             <h4>${tender.title}</h4>
-            <p><strong>Región:</strong> ${tender.region}</p>
+            <p><strong>Ciudad:</strong> ${tender.city}</p>
             <p><strong>Categoría:</strong> ${tender.category}</p>
             <p><strong>Valor Estimado:</strong> €${formatNumber(tender.estimatedValue)}</p>
-            <p><strong>Estado:</strong> <span class="status-badge status-${tender.status.toLowerCase()}">${tender.status}</span></p>
             <a href="data.html" class="btn btn-primary">Ver Detalles</a>
         `;
         previewContainer.appendChild(tenderCard);
     });
+}
+
+// Helper function to map status codes to readable status
+function getStatusFromCode(statusCode) {
+    const statusMap = {
+        'PUB': 'Published',
+        'AWD': 'Awarded',
+        'CAN': 'Cancelled',
+        'CLO': 'Closed',
+        'ACT': 'Active',
+        'SUS': 'Suspended'
+    };
+    
+    return statusMap[statusCode] || 'Unknown';
 }
 
 // Utility function for number formatting

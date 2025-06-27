@@ -1,31 +1,27 @@
 #!/usr/bin/env node
 
 /**
- * Data Validation Script for SPPD-OT
- * Validates the structure and content of sample-data.json
+ * Data Validation Script
+ * Validates the structure and content of open_tenders.json
  */
 
 const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const DATA_FILE = path.join(__dirname, '../data/sample-data.json');
+const DATA_FILE = path.join(__dirname, '../data/open_tenders.json');
 const REQUIRED_FIELDS = [
-  'id', 'title', 'description', 'publicationDate', 'deadline', 
-  'estimatedValue', 'region', 'category', 'contractingAuthority', 'status'
+  'ID', 'title', 'ContractingParty', 'City', 'Country', 
+  'EstimatedAmount', 'TotalAmount', 'StatusCode', 'ProcessEndDate'
 ];
 
 // Validation functions
 function validateDataStructure(data) {
-  if (!data || typeof data !== 'object') {
-    throw new Error('Data must be an object');
+  if (!data || !Array.isArray(data)) {
+    throw new Error('Data must be an array');
   }
   
-  if (!data.data || !Array.isArray(data.data)) {
-    throw new Error('Data must contain a "data" array');
-  }
-  
-  if (data.data.length === 0) {
+  if (data.length === 0) {
     throw new Error('Data array cannot be empty');
   }
   
@@ -41,83 +37,64 @@ function validateRecord(record, index) {
   });
   
   // Validate field types and formats
-  if (typeof record.id !== 'string' || record.id.trim() === '') {
-    throw new Error(`Invalid id in item ${index}: must be a non-empty string`);
+  if (typeof record.ID !== 'string' || record.ID.trim() === '') {
+    throw new Error(`Invalid ID in item ${index}: must be a non-empty string`);
   }
   
   if (typeof record.title !== 'string' || record.title.trim() === '') {
     throw new Error(`Invalid title in item ${index}: must be a non-empty string`);
   }
   
-  if (typeof record.description !== 'string' || record.description.trim() === '') {
-    throw new Error(`Invalid description in item ${index}: must be a non-empty string`);
+  if (typeof record.ContractingParty !== 'string' || record.ContractingParty.trim() === '') {
+    throw new Error(`Invalid ContractingParty in item ${index}: must be a non-empty string`);
   }
   
-  // Validate date formats (YYYY-MM-DD)
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(record.publicationDate)) {
-    throw new Error(`Invalid publicationDate format in item ${index}: must be YYYY-MM-DD`);
+  if (typeof record.City !== 'string' || record.City.trim() === '') {
+    throw new Error(`Invalid City in item ${index}: must be a non-empty string`);
   }
   
-  if (!dateRegex.test(record.deadline)) {
-    throw new Error(`Invalid deadline format in item ${index}: must be YYYY-MM-DD`);
-  }
-  
-  // Validate dates are logical
-  const pubDate = new Date(record.publicationDate);
-  const deadline = new Date(record.deadline);
-  
-  if (isNaN(pubDate.getTime())) {
-    throw new Error(`Invalid publicationDate in item ${index}: not a valid date`);
-  }
-  
-  if (isNaN(deadline.getTime())) {
-    throw new Error(`Invalid deadline in item ${index}: not a valid date`);
-  }
-  
-  if (deadline <= pubDate) {
-    throw new Error(`Invalid dates in item ${index}: deadline must be after publication date`);
+  if (typeof record.Country !== 'string' || record.Country.trim() === '') {
+    throw new Error(`Invalid Country in item ${index}: must be a non-empty string`);
   }
   
   // Validate numeric fields
-  if (typeof record.estimatedValue !== 'number' || record.estimatedValue < 0) {
-    throw new Error(`Invalid estimatedValue in item ${index}: must be a positive number`);
-  }
-  
-  if (typeof record.bidders !== 'number' || record.bidders < 0) {
-    throw new Error(`Invalid bidders in item ${index}: must be a non-negative number`);
-  }
-  
-  // Validate string fields
-  const stringFields = ['region', 'category', 'contractingAuthority', 'status'];
-  stringFields.forEach(field => {
-    if (typeof record[field] !== 'string' || record[field].trim() === '') {
-      throw new Error(`Invalid ${field} in item ${index}: must be a non-empty string`);
+  if (record.EstimatedAmount !== null && record.EstimatedAmount !== undefined) {
+    const estimatedAmount = parseFloat(record.EstimatedAmount);
+    if (isNaN(estimatedAmount) || estimatedAmount < 0) {
+      throw new Error(`Invalid EstimatedAmount in item ${index}: must be a positive number or null`);
     }
-  });
+  }
+  
+  if (record.TotalAmount !== null && record.TotalAmount !== undefined) {
+    const totalAmount = parseFloat(record.TotalAmount);
+    if (isNaN(totalAmount) || totalAmount < 0) {
+      throw new Error(`Invalid TotalAmount in item ${index}: must be a positive number or null`);
+    }
+  }
+  
+  // Validate status code
+  if (typeof record.StatusCode !== 'string' || record.StatusCode.trim() === '') {
+    throw new Error(`Invalid StatusCode in item ${index}: must be a non-empty string`);
+  }
+  
+  // Validate date format if present
+  if (record.ProcessEndDate !== null && record.ProcessEndDate !== undefined) {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(record.ProcessEndDate)) {
+      throw new Error(`Invalid ProcessEndDate format in item ${index}: must be YYYY-MM-DD or null`);
+    }
+  }
   
   // Validate optional fields if present
-  if (record.awardDate !== null && record.awardDate !== undefined) {
-    if (!dateRegex.test(record.awardDate)) {
-      throw new Error(`Invalid awardDate format in item ${index}: must be YYYY-MM-DD or null`);
+  if (record.link !== null && record.link !== undefined) {
+    if (typeof record.link !== 'string' || record.link.trim() === '') {
+      throw new Error(`Invalid link in item ${index}: must be a non-empty string or null`);
     }
   }
   
-  if (record.awardedValue !== null && record.awardedValue !== undefined) {
-    if (typeof record.awardedValue !== 'number' || record.awardedValue < 0) {
-      throw new Error(`Invalid awardedValue in item ${index}: must be a positive number or null`);
-    }
-  }
-  
-  if (record.winnerCompany !== null && record.winnerCompany !== undefined) {
-    if (typeof record.winnerCompany !== 'string' || record.winnerCompany.trim() === '') {
-      throw new Error(`Invalid winnerCompany in item ${index}: must be a non-empty string or null`);
-    }
-  }
-  
-  if (record.contactInfo !== null && record.contactInfo !== undefined) {
-    if (typeof record.contactInfo !== 'string' || record.contactInfo.trim() === '') {
-      throw new Error(`Invalid contactInfo in item ${index}: must be a non-empty string or null`);
+  if (record.updated !== null && record.updated !== undefined) {
+    if (typeof record.updated !== 'number' || record.updated <= 0) {
+      throw new Error(`Invalid updated in item ${index}: must be a positive number or null`);
     }
   }
   
@@ -126,7 +103,7 @@ function validateRecord(record, index) {
 
 function validateDataContent(data) {
   // Check for duplicate IDs
-  const ids = data.data.map(item => item.id);
+  const ids = data.map(item => item.ID);
   const uniqueIds = new Set(ids);
   
   if (ids.length !== uniqueIds.size) {
@@ -134,7 +111,7 @@ function validateDataContent(data) {
   }
   
   // Validate each record
-  data.data.forEach((record, index) => {
+  data.forEach((record, index) => {
     validateRecord(record, index);
   });
   
@@ -165,7 +142,7 @@ function validateData() {
     
     // Summary
     console.log(`\n📊 Validation Summary:`);
-    console.log(`- Total records: ${data.data.length}`);
+    console.log(`- Total records: ${data.length}`);
     console.log(`- Required fields: ${REQUIRED_FIELDS.length}`);
     console.log(`- Data integrity: ✅ Valid`);
     
