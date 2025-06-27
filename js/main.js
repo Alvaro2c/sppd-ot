@@ -115,22 +115,11 @@ function initPreviewData() {
     if (!previewContainer) return;
     
     // Transform data to match expected structure
-    const transformedData = window.openTendersData.map(item => ({
-        id: item.ID || '',
-        title: item.title || '',
-        description: item.title || '',
-        publicationDate: item.updated ? new Date(item.updated).toISOString().split('T')[0] : '',
-        deadline: item.ProcessEndDate || '',
-        estimatedValue: parseFloat(item.EstimatedAmount || item.TotalAmount || 0),
-        city: item.City || '',
-        category: item.CPVCode || '',
-        contractingAuthority: item.ContractingParty || '',
-        link: item.link || ''
-    }));
+    const transformedData = window.SPPDUtils.transformData(window.openTendersData);
     
     // Get latest 3 tenders
     const latestTenders = transformedData
-        .sort((a, b) => new Date(b.publicationDate) - new Date(a.publicationDate))
+        .sort((a, b) => new Date(b.updated) - new Date(a.updated))
         .slice(0, 3);
     
     previewContainer.innerHTML = '';
@@ -142,34 +131,15 @@ function initPreviewData() {
             <h4>${tender.title}</h4>
             <p><strong>Ciudad:</strong> ${tender.city}</p>
             <p><strong>Categoría:</strong> ${tender.category}</p>
-            <p><strong>Valor Estimado:</strong> €${formatNumber(tender.estimatedValue)}</p>
+            <p><strong>Valor Estimado:</strong> €${window.SPPDUtils.formatNumber(tender.estimatedValue)}</p>
             <a href="data.html" class="btn btn-primary">Ver Detalles</a>
         `;
         previewContainer.appendChild(tenderCard);
     });
 }
 
-// Helper function to map status codes to readable status
-function getStatusFromCode(statusCode) {
-    const statusMap = {
-        'PUB': 'Published',
-        'AWD': 'Awarded',
-        'CAN': 'Cancelled',
-        'CLO': 'Closed',
-        'ACT': 'Active',
-        'SUS': 'Suspended'
-    };
-    
-    return statusMap[statusCode] || 'Unknown';
-}
-
-// Utility function for number formatting
-function formatNumber(num) {
-    return new Intl.NumberFormat('es-ES').format(num);
-}
-
 // Export functions for use in other modules
-window.SPPDUtils = {
+window.SPPDMain = {
     initPreviewData,
     initScrollEffects
 }; 

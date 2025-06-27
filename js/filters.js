@@ -26,19 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initDataTable() {
     if (!dataInitialized && window.openTendersData) {
         // Transform the data to match the expected UI structure
-        currentData = window.openTendersData.map(item => ({
-            id: item.ID || '',
-            title: item.title || '',
-            description: item.title || '', // Using title as description since description field doesn't exist
-            publicationDate: item.updated ? new Date(item.updated).toISOString().split('T')[0] : '',
-            updated: item.updated ? new Date(item.updated).toISOString().split('T')[0] : '',
-            deadline: item.ProcessEndDate || '',
-            estimatedValue: parseFloat(item.EstimatedAmount || item.TotalAmount || 0),
-            city: item.City || '',
-            category: item.CPVCode || '',
-            contractingAuthority: item.ContractingParty || '',
-            link: item.link || ''
-        }));
+        currentData = window.SPPDUtils.transformData(window.openTendersData);
         filteredData = [...currentData];
         dataInitialized = true;
         
@@ -61,7 +49,7 @@ function initDataTable() {
     });
     
     if (searchInput) {
-        searchInput.addEventListener('input', debounce(applyFilters, 300));
+        searchInput.addEventListener('input', window.SPPDUtils.debounce(applyFilters, 300));
     }
     
     if (applyBtn) {
@@ -82,7 +70,7 @@ function applyFilters() {
     
     filteredData = currentData.filter(item => {
         // Date range filter
-        if (dateRange && !filterByDateRange(item.publicationDate, dateRange)) {
+        if (dateRange && !filterByDateRange(item.updated, dateRange)) {
             return false;
         }
         
@@ -91,8 +79,8 @@ function applyFilters() {
             return false;
         }
         
-        // City filter (previously region)
-        if (region && item.city !== region) {
+        // Region filter (previously city)
+        if (region && item.region !== region) {
             return false;
         }
         
@@ -124,18 +112,24 @@ function applyFilters() {
 }
 
 function filterByDateRange(dateString, range) {
+    if (!dateString || dateString === '') {
+        return false; // Don't include items with no date in date-based filters
+    }
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+        return false; // Don't include items with invalid dates
+    }
     const now = new Date();
     
     switch (range) {
         case 'last-30':
-            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60);
             return date >= thirtyDaysAgo;
         case 'last-90':
-            const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60);
             return date >= ninetyDaysAgo;
         case 'last-year':
-            const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+            const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60);
             return date >= oneYearAgo;
         case '2024':
             return date.getFullYear() === 2024;
@@ -152,8 +146,10 @@ function filterByValueRange(value, range) {
             return value >= 0 && value <= 10000;
         case '10000-50000':
             return value > 10000 && value <= 50000;
-        case '50000-200000':
-            return value > 50000 && value <= 200000;
+        case '50000-100000':
+            return value > 50000 && value <= 100000;
+        case '100000-200000':
+            return value > 100000 && value <= 200000;
         case '200000-1000000':
             return value > 200000 && value <= 1000000;
         case '1000000+':
@@ -209,14 +205,14 @@ function renderTable() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${item.id}</td>
-            <td>${truncateText(item.title, 60)}</td>
+            <td>${window.SPPDUtils.truncateText(item.title, 60)}</td>
             <td>${item.city}</td>
+            <td>${item.region}</td>
             <td>${item.category}</td>
-            <td>€${formatNumber(item.estimatedValue)}</td>
-            <td>${formatDate(item.publicationDate)}</td>
-            <td>${formatDate(item.deadline)}</td>
-            <td>${formatDate(item.updated)}</td>
-            <td>${truncateText(item.contractingAuthority, 40)}</td>
+            <td>€${window.SPPDUtils.formatNumber(item.estimatedValue)}</td>
+            <td>${window.SPPDUtils.formatDate(item.updated)}</td>
+            <td>${window.SPPDUtils.formatDate(item.deadline)}</td>
+            <td>${window.SPPDUtils.truncateText(item.contractingAuthority, 40)}</td>
             <td><a href="${item.link}" target="_blank" class="btn btn-sm btn-primary">Ver</a></td>
         `;
         tableBody.appendChild(row);
@@ -294,16 +290,24 @@ function sortTable(column) {
             return direction === 'asc' ? aVal - bVal : bVal - aVal;
         }
         
-        // Handle date values
-        if (column.includes('Date')) {
+        // Handle date values (including updated column)
+        if (column === 'updated' || column === 'deadline' || column.includes('Date')) {
+            // Handle empty dates by treating them as very old dates
+            if (!aVal || aVal === '') aVal = '1900-01-01';
+            if (!bVal || bVal === '') bVal = '1900-01-01';
+            
             aVal = new Date(aVal);
             bVal = new Date(bVal);
+            
+            if (isNaN(aVal.getTime())) aVal = new Date('1900-01-01');
+            if (isNaN(bVal.getTime())) bVal = new Date('1900-01-01');
+            
             return direction === 'asc' ? aVal - bVal : bVal - aVal;
         }
         
         // Handle string values
-        aVal = String(aVal).toLowerCase();
-        bVal = String(bVal).toLowerCase();
+        aVal = String(aVal || '').toLowerCase();
+        bVal = String(bVal || '').toLowerCase();
         
         if (aVal < bVal) return direction === 'asc' ? -1 : 1;
         if (aVal > bVal) return direction === 'asc' ? 1 : -1;
@@ -350,11 +354,11 @@ function exportToCSV() {
         'ID Licitación',
         'Título',
         'Ciudad',
+        'Región',
         'Categoría',
         'Valor Estimado (€)',
-        'Fecha Publicación',
-        'Fecha Límite',
         'Actualizado',
+        'Fecha Límite',
         'Autoridad Contratante',
         'Enlace'
     ];
@@ -365,63 +369,22 @@ function exportToCSV() {
             `"${item.id}"`,
             `"${item.title}"`,
             item.city,
+            item.region,
             item.category,
             item.estimatedValue,
-            item.publicationDate,
-            item.deadline,
             item.updated,
+            item.deadline,
             `"${item.contractingAuthority}"`,
             item.link
         ].join(','))
     ].join('\n');
     
-    downloadFile(csvContent, 'licitaciones_abiertas.csv', 'text/csv');
+    window.SPPDUtils.downloadFile(csvContent, 'licitaciones_abiertas.csv', 'text/csv');
 }
 
 function exportToJSON() {
     const jsonContent = JSON.stringify(filteredData, null, 2);
-    downloadFile(jsonContent, 'sppd-data.json', 'application/json');
-}
-
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-}
-
-// Utility functions
-function truncateText(text, maxLength) {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-}
-
-function formatNumber(num) {
-    return new Intl.NumberFormat('es-ES').format(num);
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-}
-
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
+    window.SPPDUtils.downloadFile(jsonContent, 'sppd-data.json', 'application/json');
 }
 
 // Add status badge styles
@@ -470,25 +433,11 @@ window.SPPDFilters = {
     initDataTable
 };
 
-// Helper function to map status codes to readable status
-function getStatusFromCode(statusCode) {
-    const statusMap = {
-        'PUB': 'Published',
-        'AWD': 'Awarded',
-        'CAN': 'Cancelled',
-        'CLO': 'Closed',
-        'ACT': 'Active',
-        'SUS': 'Suspended'
-    };
-    
-    return statusMap[statusCode] || 'Unknown';
-}
-
 // Populate filter dropdowns with actual data from JSON
 function populateFilterDropdowns() {
     // Populate region dropdown
     const regionSelect = document.getElementById('region');
-    if (regionSelect && window.regions) {
+    if (regionSelect && currentData.length > 0) {
         // Keep the first option (default)
         const defaultOption = regionSelect.querySelector('option[value=""]');
         regionSelect.innerHTML = '';
@@ -497,7 +446,8 @@ function populateFilterDropdowns() {
         }
         
         // Add options from actual data
-        window.regions.forEach(region => {
+        const uniqueRegions = [...new Set(currentData.map(item => item.region).filter(Boolean))].sort();
+        uniqueRegions.forEach(region => {
             const option = document.createElement('option');
             option.value = region;
             option.textContent = region;
@@ -507,7 +457,7 @@ function populateFilterDropdowns() {
     
     // Populate category dropdown
     const categorySelect = document.getElementById('category');
-    if (categorySelect && window.categories) {
+    if (categorySelect && currentData.length > 0) {
         // Keep the first option (default)
         const defaultOption = categorySelect.querySelector('option[value=""]');
         categorySelect.innerHTML = '';
@@ -516,11 +466,12 @@ function populateFilterDropdowns() {
         }
         
         // Add options from actual data
-        window.categories.forEach(category => {
+        const uniqueCategories = [...new Set(currentData.map(item => item.category).filter(Boolean))].sort();
+        uniqueCategories.forEach(category => {
             const option = document.createElement('option');
             option.value = category;
             option.textContent = category;
             categorySelect.appendChild(option);
         });
     }
-} 
+}

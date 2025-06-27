@@ -18,7 +18,9 @@ async function loadDataFromJSON() {
         openTendersData = jsonData.data || [];
         
         // Extract unique values for filters from the original data
-        regions = [...new Set(openTendersData.map(item => item.City).filter(Boolean))].sort();
+        regions = [...new Set(openTendersData.map(item => 
+            window.RegionMapping ? window.RegionMapping.getRegionFromZipCode(item.ZipCode) : 'Desconocida'
+        ).filter(Boolean))].sort();
         categories = [...new Set(openTendersData.map(item => item.CPVCode).filter(Boolean))].sort();
         
         dataLoaded = true;
@@ -33,8 +35,8 @@ async function loadDataFromJSON() {
             window.SPPDFilters.initDataTable();
         }
         
-        if (window.SPPDUtils && window.SPPDUtils.initPreviewData) {
-            window.SPPDUtils.initPreviewData();
+        if (window.SPPDMain && window.SPPDMain.initPreviewData) {
+            window.SPPDMain.initPreviewData();
         }
         
         console.log('Data loaded successfully:', openTendersData.length, 'records');
