@@ -213,7 +213,7 @@ function renderTable() {
             <td>${window.SPPDUtils.formatDate(item.updated)}</td>
             <td>${window.SPPDUtils.formatDate(item.deadline)}</td>
             <td>${window.SPPDUtils.truncateText(item.contractingAuthority, 40)}</td>
-            <td><a href="${item.link}" target="_blank" class="btn btn-sm btn-primary">Ver</a></td>
+            <td><a href="${window.SPPDUtils.ensureHttpsUrl(item.link)}" target="_blank" class="btn btn-sm btn-primary">Ver</a></td>
         `;
         tableBody.appendChild(row);
     });

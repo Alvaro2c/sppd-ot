@@ -93,8 +93,34 @@ function transformData(data) {
         category: item.CPVCode || '',
         type: item.ProjectTypeCode || '',
         contractingAuthority: item.ContractingParty || '',
-        link: item.link || ''
+        link: ensureHttpsUrl(item.link || '')
     }));
+}
+
+/**
+ * Ensure URL has HTTPS protocol to prevent security warnings
+ * @param {string} url - The URL to validate and fix
+ * @returns {string} - URL with HTTPS protocol
+ */
+function ensureHttpsUrl(url) {
+    if (!url || url.trim() === '') {
+        return '';
+    }
+    
+    // Remove any leading/trailing whitespace
+    url = url.trim();
+    
+    // If URL already has http:// or https://, ensure it's https://
+    if (url.startsWith('http://')) {
+        return url.replace('http://', 'https://');
+    }
+    
+    // If URL doesn't have a protocol, add https://
+    if (!url.startsWith('https://') && !url.startsWith('http://')) {
+        return 'https://' + url;
+    }
+    
+    return url;
 }
 
 // Export functions for use in other modules
@@ -104,5 +130,6 @@ window.SPPDUtils = {
     formatDate,
     debounce,
     downloadFile,
-    transformData
+    transformData,
+    ensureHttpsUrl
 }; 
