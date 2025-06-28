@@ -19,7 +19,7 @@ async function loadDataFromJSON() {
         
         // Extract unique values for filters from the original data
         regions = [...new Set(openTendersData.map(item => 
-            window.RegionMapping ? window.RegionMapping.getRegionFromZipCode(item.ZipCode) : 'Desconocida'
+            window.RegionMapping ? window.RegionMapping.getRegionFromZipCode(item.ZipCode) : 'Otros'
         ).filter(Boolean))].sort();
         categories = [...new Set(openTendersData.map(item => item.CPVCode).filter(Boolean))].sort();
         

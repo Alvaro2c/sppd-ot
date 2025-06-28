@@ -96,12 +96,12 @@ const zipCodeToRegion = {
 // Function to get region from zip code
 function getRegionFromZipCode(zipCode) {
     if (!zipCode || typeof zipCode !== 'string') {
-        return 'Desconocida';
+        return 'Otros';
     }
     
     // Extract first two digits
     const firstTwoDigits = zipCode.substring(0, 2);
-    return zipCodeToRegion[firstTwoDigits] || 'Desconocida';
+    return zipCodeToRegion[firstTwoDigits] || 'Otros';
 }
 
 // Function to get all available regions

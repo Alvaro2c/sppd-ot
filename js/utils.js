@@ -89,7 +89,7 @@ function transformData(data) {
         deadline: item.ProcessEndDate || '',
         estimatedValue: parseFloat(item.EstimatedAmount || item.TotalAmount || 0),
         city: item.City || '',
-        region: window.RegionMapping ? window.RegionMapping.getRegionFromZipCode(item.ZipCode) : 'Desconocida',
+        region: window.RegionMapping ? window.RegionMapping.getRegionFromZipCode(item.ZipCode) : 'Otros',
         category: item.CPVCode || '',
         type: item.ProjectTypeCode || '',
         contractingAuthority: item.ContractingParty || '',
