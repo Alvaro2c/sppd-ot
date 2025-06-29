@@ -1,7 +1,7 @@
-// Spanish Zip Code to Autonomous Community Mapping
+// Spanish Postal Zone to Autonomous Community Mapping
 // Based on Spanish postal code system (first two digits indicate province)
 
-const zipCodeToRegion = {
+const postalZoneToRegion = {
     // Andalucía
     '04': 'Andalucía', // Almería
     '11': 'Andalucía', // Cádiz
@@ -93,25 +93,25 @@ const zipCodeToRegion = {
     '46': 'Valencia'  // Valencia
 };
 
-// Function to get region from zip code
-function getRegionFromZipCode(zipCode) {
-    if (!zipCode || typeof zipCode !== 'string') {
+// Function to get region from postal zone
+function getRegionFromPostalZone(postalZone) {
+    if (!postalZone || typeof postalZone !== 'string') {
         return 'Otros';
     }
     
     // Extract first two digits
-    const firstTwoDigits = zipCode.substring(0, 2);
-    return zipCodeToRegion[firstTwoDigits] || 'Otros';
+    const firstTwoDigits = postalZone.substring(0, 2);
+    return postalZoneToRegion[firstTwoDigits] || 'Otros';
 }
 
 // Function to get all available regions
 function getAvailableRegions() {
-    return [...new Set(Object.values(zipCodeToRegion))].sort();
+    return [...new Set(Object.values(postalZoneToRegion))].sort();
 }
 
 // Export functions
 window.RegionMapping = {
-    getRegionFromZipCode,
+    getRegionFromPostalZone,
     getAvailableRegions,
-    zipCodeToRegion
+    postalZoneToRegion
 }; 
