@@ -11,6 +11,8 @@ A comprehensive website providing transparent access to Spanish public procureme
 - **Data Management**: Sortable table with pagination, CSV/JSON export
 - **Responsive Design**: Mobile-friendly interface with Spanish localization
 - **Real Data**: Spanish procurement tenders across 17 regions and 2 cities
+- **Data Validation**: JSON validation and data integrity checks
+- **Performance Optimization**: Efficient data loading and caching
 
 ### 📊 Data Fields
 - Tender ID, title, description, dates, values
@@ -24,7 +26,8 @@ A comprehensive website providing transparent access to Spanish public procureme
    ```bash
    git clone https://github.com/yourusername/sppd-ot.git
    cd sppd-ot
-   # Open index.html in browser or use: python -m http.server 8000
+   npm start
+   # Or use: python3 -m http.server 8000
    ```
 
 2. **Deploy to GitHub Pages**:
@@ -41,18 +44,37 @@ sppd-ot/
 ├── about.html              # About page
 ├── faq.html                # FAQ page
 ├── css/                    # Stylesheets
+│   ├── style.css          # Main styles
+│   └── responsive.css     # Responsive design
 ├── js/                     # JavaScript modules
-├── data/                   # Sample data
+│   ├── main.js            # Main application logic
+│   ├── data.js            # Data management
+│   ├── charts.js          # Chart.js visualizations
+│   ├── filters.js         # Filtering functionality
+│   ├── utils.js           # Utility functions
+│   └── region-mapping.js  # Geographic data mapping
+├── data/                   # Data files
+│   └── open_tenders.json  # Main dataset (5MB)
+├── images/                 # Static assets
+├── scripts/                # Build and validation scripts
+├── package.json            # Project configuration
 └── README.md               # This file
 ```
 
 ## 🛠️ Technical Details
 
 - **Dependencies**: Chart.js, Font Awesome, Google Fonts (CDN)
+- **Development Tools**: ESLint, Stylelint, HTML validation
 - **Browser Support**: All modern browsers
-- **Performance**: Optimized for fast loading
+- **Performance**: Optimized for fast loading with 5MB dataset
 - **Accessibility**: WCAG 2.1 AA compliant
 - **Code Quality**: Modular JavaScript, error handling, responsive design
+
+## 📦 Available Scripts
+
+- `npm start` - Start local development server
+- `npm run validate:json` - Validate JSON data integrity
+- `npm run validate:data` - Run comprehensive data validation
 
 ## 🤝 Contributing
 
@@ -64,7 +86,6 @@ sppd-ot/
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
 
 ---
 

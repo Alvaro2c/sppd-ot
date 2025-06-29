@@ -68,12 +68,12 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <i class="fas fa-file-contract"></i>
-                    <h3>20,000+</h3>
+                    <h3 id="total-records">Cargando...</h3>
                     <p>Licitaciones Activas</p>
                 </div>
                 <div class="stat-card">
                     <i class="fas fa-money-bill-wave"></i>
-                    <h3>€2.5B</h3>
+                    <h3 id="total-value">Cargando...</h3>
                     <p>Valor Total</p>
                 </div>
                 <div class="stat-card">
@@ -88,7 +88,7 @@
                 </div>
                 <div class="stat-card">
                     <i class="fas fa-sync"></i>
-                    <h3>24h</h3>
+                    <h3 id="last-update">Cargando...</h3>
                     <p>Última Actualización</p>
                 </div>
                 <div class="stat-card">
@@ -143,5 +143,66 @@
     <script src="js/region-mapping.js"></script>
     <script src="js/main.js"></script>
     <script src="js/data.js"></script>
+    
+    <!-- Script to update stat cards with metadata -->
+    <script>
+        // Function to format number in billions
+        function formatInBillions(num) {
+            if (num >= 1000000000) {
+                return '€' + (num / 1000000000).toFixed(1) + 'B';
+            } else if (num >= 1000000) {
+                return '€' + (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return '€' + (num / 1000).toFixed(1) + 'K';
+            }
+            return '€' + num.toFixed(0);
+        }
+
+        // Function to format date in ISO format
+        function formatISODate(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp * 1000); // Convert from Unix timestamp
+            return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+        }
+
+        // Function to update stat cards with metadata
+        function updateStatCards() {
+            const metadata = window.metadata;
+            if (!metadata) return;
+
+            // Update total records
+            const totalRecordsElement = document.getElementById('total-records');
+            if (totalRecordsElement && metadata.total_records) {
+                totalRecordsElement.textContent = metadata.total_records.toLocaleString('es-ES');
+            }
+
+            // Update total value in billions
+            const totalValueElement = document.getElementById('total-value');
+            if (totalValueElement && metadata.total_estimated_amount) {
+                totalValueElement.textContent = formatInBillions(metadata.total_estimated_amount);
+            }
+
+            // Update last update date
+            const lastUpdateElement = document.getElementById('last-update');
+            if (lastUpdateElement && metadata.created_at) {
+                lastUpdateElement.textContent = formatISODate(metadata.created_at);
+            }
+        }
+
+        // Wait for data to be loaded and then update stat cards
+        function waitForDataAndUpdate() {
+            if (window.SPPDData && window.SPPDData.isDataLoaded()) {
+                updateStatCards();
+            } else {
+                // Check again in 100ms
+                setTimeout(waitForDataAndUpdate, 100);
+            }
+        }
+
+        // Start checking for data when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            waitForDataAndUpdate();
+        });
+    </script>
 </body>
 </html> 

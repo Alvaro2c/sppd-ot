@@ -4,6 +4,7 @@ let openTendersData = [];
 let regions = [];
 let categories = [];
 let dataLoaded = false;
+let metadata = null;
 
 // Load data from JSON file
 async function loadDataFromJSON() {
@@ -13,6 +14,9 @@ async function loadDataFromJSON() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const jsonData = await response.json();
+        
+        // Load metadata
+        metadata = jsonData.metadata || {};
         
         // Load data as-is from the JSON structure
         openTendersData = jsonData.data || [];
@@ -29,6 +33,7 @@ async function loadDataFromJSON() {
         window.openTendersData = openTendersData;
         window.regions = regions;
         window.categories = categories;
+        window.metadata = metadata;
         
         // Initialize data-dependent components
         if (window.SPPDFilters && window.SPPDFilters.initDataTable) {
@@ -40,6 +45,7 @@ async function loadDataFromJSON() {
         }
         
         console.log('Data loaded successfully:', openTendersData.length, 'records');
+        console.log('Metadata loaded:', metadata);
         
     } catch (error) {
         console.error('Error loading data from JSON:', error);
@@ -66,11 +72,13 @@ async function loadDataFromJSON() {
         openTendersData = [];
         regions = [];
         categories = [];
+        metadata = null;
         
         // Export empty data
         window.openTendersData = openTendersData;
         window.regions = regions;
         window.categories = categories;
+        window.metadata = metadata;
     }
 }
 
@@ -85,5 +93,6 @@ window.SPPDData = {
     getData: () => openTendersData,
     getRegions: () => regions,
     getCategories: () => categories,
+    getMetadata: () => metadata,
     isDataLoaded: () => dataLoaded
 }; 

@@ -76,6 +76,24 @@ function createCharts(data) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                onClick: function(event, elements) {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const category = typeData.labels[index];
+                        
+                        // Set the category filter dropdown to the clicked category
+                        const categorySelect = document.getElementById('category');
+                        if (categorySelect) {
+                            categorySelect.value = category;
+                            // Trigger change event if needed
+                            const event = new Event('change', { bubbles: true });
+                            categorySelect.dispatchEvent(event);
+                        }
+                        
+                        // Switch to the table/tab view
+                        switchToDataTab();
+                    }
+                },
                 plugins: {
                     legend: {
                         display: false
@@ -134,6 +152,24 @@ function createCharts(data) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                onClick: function(event, elements) {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const tenderTitle = valueData.fullTitles[index];
+                        
+                        // Find the tender in the data and filter by its title
+                        const searchInput = document.getElementById('search');
+                        if (searchInput) {
+                            searchInput.value = tenderTitle;
+                            // Trigger change event if needed
+                            const event = new Event('input', { bubbles: true });
+                            searchInput.dispatchEvent(event);
+                        }
+                        
+                        // Switch to the table/tab view
+                        switchToDataTab();
+                    }
+                },
                 plugins: {
                     legend: {
                         display: false
@@ -317,31 +353,86 @@ function createSpainMap(container, regionData) {
                                 const event = new Event('change', { bubbles: true });
                                 regionSelect.dispatchEvent(event);
                             }
-                            // Switch to the table/tab view (assuming #data-section is the table and #analytics-section is the map)
-                            const dataSection = document.getElementById('data-section');
-                            const analyticsSection = document.getElementById('analytics-section');
-                            if (dataSection && analyticsSection) {
-                                dataSection.style.display = '';
-                                analyticsSection.style.display = 'none';
-                                dataSection.classList.add('active');
-                                analyticsSection.classList.remove('active');
-                            }
-                            // Update tab buttons
-                            const tabButtons = document.querySelectorAll('.tab-button');
-                            tabButtons.forEach(btn => {
-                                if (btn.getAttribute('data-tab') === 'data-section') {
-                                    btn.classList.add('active');
-                                } else if (btn.getAttribute('data-tab') === 'analytics-section') {
-                                    btn.classList.remove('active');
-                                }
-                            });
-                            // Optionally scroll to the table
-                            const table = document.getElementById('data-table');
-                            if (table) {
-                                table.scrollIntoView({ behavior: 'smooth' });
-                            }
+                            // Switch to the table/tab view
+                            switchToDataTab();
                         });
                     }
+                });
+                
+                // Add Melilla and Ceuta as dots at the bottom center
+                const autonomousCities = [
+                    { name: 'Ceuta', cx: 380, cy: 580 },
+                    { name: 'Melilla', cx: 420, cy: 580 }
+                ];
+                
+                autonomousCities.forEach(city => {
+                    const count = regionData.values[regionData.labels.indexOf(city.name)] || 0;
+                    const intensity = maxValue > 0 ? count / maxValue : 0;
+                    const radius = 8 + (intensity * 4); // Size based on intensity
+                    
+                    // Create circle element
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', city.cx);
+                    circle.setAttribute('cy', city.cy);
+                    circle.setAttribute('r', radius);
+                    circle.setAttribute('fill', `rgba(26, 54, 93, ${0.2 + intensity * 0.8})`);
+                    circle.setAttribute('stroke', '#1a365d');
+                    circle.setAttribute('stroke-width', '2');
+                    circle.setAttribute('data-region', city.name);
+                    circle.setAttribute('data-count', count);
+                    circle.style.cursor = 'pointer';
+                    
+                    // Add hover effects with tooltip
+                    circle.addEventListener('mouseenter', function(e) {
+                        this.setAttribute('fill', `rgba(26, 54, 93, ${0.8 + intensity * 0.2})`);
+                        this.setAttribute('stroke-width', '3');
+                        
+                        // Show tooltip
+                        const rect = container.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        
+                        tooltip.style.left = (x + 10) + 'px';
+                        tooltip.style.top = (y - 30) + 'px';
+                        tooltip.style.display = 'block';
+                        tooltip.innerHTML = `
+                            <strong>${city.name}</strong><br>
+                            Licitaciones: ${count}
+                        `;
+                    });
+                    
+                    circle.addEventListener('mousemove', function(e) {
+                        const rect = container.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        
+                        tooltip.style.left = (x + 10) + 'px';
+                        tooltip.style.top = (y - 30) + 'px';
+                    });
+                    
+                    circle.addEventListener('mouseleave', function() {
+                        this.setAttribute('fill', `rgba(26, 54, 93, ${0.2 + intensity * 0.8})`);
+                        this.setAttribute('stroke-width', '2');
+                        
+                        // Hide tooltip
+                        tooltip.style.display = 'none';
+                    });
+
+                    // Add click event
+                    circle.addEventListener('click', function() {
+                        // Set the region filter dropdown to the clicked city
+                        const regionSelect = document.getElementById('region');
+                        if (regionSelect) {
+                            regionSelect.value = city.name;
+                            // Trigger change event if needed
+                            const event = new Event('change', { bubbles: true });
+                            regionSelect.dispatchEvent(event);
+                        }
+                        // Switch to the table/tab view
+                        switchToDataTab();
+                    });
+                    
+                    svg.appendChild(circle);
                 });
                 
                 // Add legend with ranges
@@ -514,9 +605,12 @@ function getTypeData(data) {
         typeCount[item.type] = (typeCount[item.type] || 0) + 1;
     });
     
+    // Sort by count in descending order (bigger to smaller)
+    const sortedEntries = Object.entries(typeCount).sort((a, b) => b[1] - a[1]);
+    
     return {
-        labels: Object.keys(typeCount),
-        values: Object.values(typeCount)
+        labels: sortedEntries.map(entry => entry[0]),
+        values: sortedEntries.map(entry => entry[1])
     };
 }
 
@@ -529,6 +623,7 @@ function getValueData(data) {
     
     return {
         labels: sortedData.map(item => window.SPPDUtils.truncateText(item.title, 30)),
+        fullTitles: sortedData.map(item => item.title), // Store full titles for click functionality
         values: sortedData.map(item => item.estimatedValue)
     };
 }
@@ -554,7 +649,61 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (target === 'analytics-section') {
                 if (analyticsSection) analyticsSection.style.display = '';
                 if (dataSection) dataSection.style.display = 'none';
+                // Reset filters when switching to analytics
+                resetFiltersForAnalytics();
             }
         });
     });
-}); 
+});
+
+// Function to reset filters when switching to analytics tab
+function resetFiltersForAnalytics() {
+    // Reset all filter inputs
+    const dateRange = document.getElementById('date-range');
+    const valueRange = document.getElementById('value-range');
+    const region = document.getElementById('region');
+    const category = document.getElementById('category');
+    const search = document.getElementById('search');
+    
+    if (dateRange) dateRange.value = '';
+    if (valueRange) valueRange.value = '';
+    if (region) region.value = '';
+    if (category) category.value = '';
+    if (search) search.value = '';
+    
+    // Reset filtered data to show all data in charts
+    if (window.SPPDData && window.SPPDData.isDataLoaded()) {
+        const allData = window.SPPDUtils.transformData(window.openTendersData);
+        if (window.SPPDCharts && window.SPPDCharts.updateCharts) {
+            window.SPPDCharts.updateCharts(allData);
+        }
+    }
+}
+
+function switchToDataTab() {
+    // Switch to data tab
+    const dataSection = document.getElementById('data-section');
+    const analyticsSection = document.getElementById('analytics-section');
+    if (dataSection && analyticsSection) {
+        dataSection.style.display = '';
+        analyticsSection.style.display = 'none';
+        dataSection.classList.add('active');
+        analyticsSection.classList.remove('active');
+    }
+    
+    // Update tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(btn => {
+        if (btn.getAttribute('data-tab') === 'data-section') {
+            btn.classList.add('active');
+        } else if (btn.getAttribute('data-tab') === 'analytics-section') {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Optionally scroll to the table
+    const table = document.getElementById('data-table');
+    if (table) {
+        table.scrollIntoView({ behavior: 'smooth' });
+    }
+} 
