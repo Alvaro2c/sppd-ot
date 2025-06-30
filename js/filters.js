@@ -122,19 +122,18 @@ function filterByDateRange(dateString, range) {
     const now = new Date();
     
     switch (range) {
+        case 'last-7':
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return date >= sevenDaysAgo;
+        case 'last-15':
+            const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
+            return date >= fifteenDaysAgo;
         case 'last-30':
-            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60);
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
             return date >= thirtyDaysAgo;
-        case 'last-90':
-            const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60);
-            return date >= ninetyDaysAgo;
-        case 'last-year':
-            const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60);
-            return date >= oneYearAgo;
-        case '2024':
-            return date.getFullYear() === 2024;
-        case '2023':
-            return date.getFullYear() === 2023;
+        case 'last-60':
+            const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+            return date >= sixtyDaysAgo;
         default:
             return true;
     }
