@@ -5,22 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datos y Análisis - SPPD</title>
     <meta name="description" content="Explora datos detallados de contratación pública española con filtros avanzados, tablas interactivas y análisis visuales.">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <!-- CSS -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/responsive.css">
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
 </head>
@@ -38,7 +38,7 @@
             </div>
             <ul class="nav-menu">
                 <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
-                <li><a href="data.html" class="active"><i class="fas fa-chart-bar"></i> Data & Analytics</a></li>
+                <li><a href="data.html" class="active"><i class="fas fa-chart-bar"></i> Data &amp; Analytics</a></li>
                 <li><a href="about.html"><i class="fas fa-info-circle"></i> About</a></li>
                 <li><a href="faq.html"><i class="fas fa-question-circle"></i> FAQ</a></li>
             </ul>
@@ -61,11 +61,11 @@
     <section class="section-nav">
         <div class="container">
             <div class="section-tabs">
-                <button class="tab-button active" data-tab="data-section">
+                <button class="tab-button active" data-tab="data-section" type="button">
                     <i class="fas fa-table"></i>
                     Tabla de Datos
                 </button>
-                <button class="tab-button" data-tab="analytics-section">
+                <button class="tab-button" data-tab="analytics-section" type="button">
                     <i class="fas fa-chart-bar"></i>
                     Análisis
                 </button>
@@ -76,7 +76,7 @@
     <!-- Filters Toggle -->
     <section class="filters-toggle">
         <div class="container">
-            <button id="filter-toggle" class="btn btn-secondary">
+            <button id="filter-toggle" class="btn btn-secondary" type="button">
                 <i class="fas fa-filter"></i>
                 Mostrar Filtros
             </button>
@@ -151,8 +151,8 @@
                     <input type="text" id="search" placeholder="Buscar títulos de licitaciones...">
                 </div>
                 <div class="filter-actions">
-                    <button id="apply-filters" class="btn btn-primary">Aplicar Filtros</button>
-                    <button id="clear-filters" class="btn btn-secondary">Limpiar Todo</button>
+                    <button id="apply-filters" class="btn btn-primary" type="button">Aplicar Filtros</button>
+                    <button id="clear-filters" class="btn btn-secondary" type="button">Limpiar Todo</button>
                 </div>
             </div>
             <div class="filter-results">
@@ -167,10 +167,10 @@
             <div class="table-header">
                 <h2>Datos de Contratación</h2>
                 <div class="table-actions">
-                    <button id="export-csv" class="btn btn-secondary">
+                    <button id="export-csv" class="btn btn-secondary" type="button">
                         <i class="fas fa-download"></i> Exportar CSV
                     </button>
-                    <button id="export-json" class="btn btn-secondary">
+                    <button id="export-json" class="btn btn-secondary" type="button">
                         <i class="fas fa-code"></i> Exportar JSON
                     </button>
                 </div>
@@ -197,9 +197,9 @@
                 </table>
             </div>
             <div class="pagination">
-                <button id="prev-page" class="btn btn-secondary">Anterior</button>
+                <button id="prev-page" class="btn btn-secondary" type="button">Anterior</button>
                 <span id="page-info">Página 1 de 1</span>
-                <button id="next-page" class="btn btn-secondary">Siguiente</button>
+                <button id="next-page" class="btn btn-secondary" type="button">Siguiente</button>
             </div>
         </div>
     </section>
