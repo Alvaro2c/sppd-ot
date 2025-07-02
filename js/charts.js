@@ -1,3 +1,4 @@
+/* global Chart */
 // Charts functionality for SPPD Open Tenders website
 
 let charts = {};
@@ -508,53 +509,6 @@ function createMapLegend(maxValue) {
     });
     
     return legendGroup;
-}
-
-function showMapTooltip(element, regionName, count) {
-    // Remove existing tooltip
-    const existingTooltip = document.querySelector('.map-tooltip');
-    if (existingTooltip) {
-        existingTooltip.remove();
-    }
-    
-    // Create tooltip
-    const tooltip = document.createElement('div');
-    tooltip.className = 'map-tooltip';
-    tooltip.style.cssText = `
-        position: absolute;
-        background: rgba(26, 54, 93, 0.95);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 4px;
-        font-family: 'Roboto', sans-serif;
-        font-size: 12px;
-        pointer-events: none;
-        z-index: 1000;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    `;
-    
-    const total = Object.values(charts.regionMap.regionData.values).reduce((a, b) => a + b, 0);
-    const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
-    
-    tooltip.innerHTML = `
-        <strong>${regionName}</strong><br>
-        Licitaciones: ${count}<br>
-        Porcentaje: ${percentage}%
-    `;
-    
-    document.body.appendChild(tooltip);
-    
-    // Position tooltip
-    const rect = element.getBoundingClientRect();
-    tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-    tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
-    
-    // Remove tooltip after 3 seconds
-    setTimeout(() => {
-        if (tooltip.parentNode) {
-            tooltip.remove();
-        }
-    }, 3000);
 }
 
 function updateCharts(data) {

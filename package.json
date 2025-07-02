@@ -1,6 +1,7 @@
 {
   "name": "sppd-ot",
   "version": "1.0.0",
+  "type": "module",
   "description": "Spanish Public Procurement Data - Open Tenders - A comprehensive, interactive website providing transparent access to Spanish public procurement data",
   "main": "index.html",
   "scripts": {
@@ -33,7 +34,9 @@
   },
   "homepage": "https://yourusername.github.io/sppd-ot",
   "devDependencies": {
-    "eslint": "^8.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "globals": "^15.0.0",
     "stylelint": "^15.0.0",
     "stylelint-config-standard": "^34.0.0",
     "html-validate": "^8.0.0",

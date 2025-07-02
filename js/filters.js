@@ -122,18 +122,22 @@ function filterByDateRange(dateString, range) {
     const now = new Date();
     
     switch (range) {
-        case 'last-7':
+        case 'last-7': {
             const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             return date >= sevenDaysAgo;
-        case 'last-15':
+        }
+        case 'last-15': {
             const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
             return date >= fifteenDaysAgo;
-        case 'last-30':
+        }
+        case 'last-30': {
             const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
             return date >= thirtyDaysAgo;
-        case 'last-60':
+        }
+        case 'last-60': {
             const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
             return date >= sixtyDaysAgo;
+        }
         default:
             return true;
     }
@@ -141,18 +145,24 @@ function filterByDateRange(dateString, range) {
 
 function filterByValueRange(value, range) {
     switch (range) {
-        case '0-10000':
+        case '0-10000': {
             return value >= 0 && value <= 10000;
-        case '10000-50000':
+        }
+        case '10000-50000': {
             return value > 10000 && value <= 50000;
-        case '50000-100000':
+        }
+        case '50000-100000': {
             return value > 50000 && value <= 100000;
-        case '100000-200000':
+        }
+        case '100000-200000': {
             return value > 100000 && value <= 200000;
-        case '200000-1000000':
+        }
+        case '200000-1000000': {
             return value > 200000 && value <= 1000000;
-        case '1000000+':
+        }
+        case '1000000+': {
             return value > 1000000;
+        }
         default:
             return true;
     }
