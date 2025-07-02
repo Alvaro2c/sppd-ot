@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  html-validation:
+    name: HTML Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm install -g html-validate
+      - run: |
+          html-validate *.html
+
+  css-validation:
+    name: CSS Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm install -g stylelint stylelint-config-standard
+      - run: |
+          echo '{
+            "extends": "stylelint-config-standard",
+            "rules": {
+              "no-descending-specificity": null
+            }
+          }' > .stylelintrc.json
+      - run: stylelint "css/*.css"
+
+  js-linting:
+    name: JavaScript Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm install -g eslint
+      - run: |
+          echo '{
+            "env": { "browser": true, "es2021": true },
+            "extends": "eslint:recommended",
+            "parserOptions": { "ecmaVersion": "latest", "sourceType": "module" },
+            "rules": { "no-unused-vars": "warn", "no-console": "off" }
+          }' > .eslintrc.json
+      - run: eslint "js/*.js"
+
+  basic-checks:
+    name: Basic Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for broken links
+        run: |
+          echo "🔍 Checking for broken links..."
+          for file in *.html; do
+            echo "Checking $file..."
+            grep -o 'href="[^"]*"' "$file" | cut -d'"' -f2 | while read link; do
+              if [[ $link == http* ]] && ! curl -s --head "$link" > /dev/null; then
+                echo "⚠️  Broken link found: $link in $file"
+                exit 1
+              fi
+            done
+          done
+      - name: Check file sizes
+        run: |
+          echo "📏 Checking file sizes..."
+          for file in *.html; do
+            size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file")
+            if [ $size -gt 500000 ]; then
+              echo "⚠️  $file is larger than 500KB ($size bytes)"
+              exit 1
+            fi
+          done
+          echo "✅ All files are within size limits" 
