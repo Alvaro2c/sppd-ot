@@ -45,15 +45,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - run: npm install -g eslint
-      - run: |
-          echo '{
-            "env": { "browser": true, "es2021": true },
-            "extends": "eslint:recommended",
-            "parserOptions": { "ecmaVersion": "latest", "sourceType": "module" },
-            "rules": { "no-unused-vars": "warn", "no-console": "off" }
-          }' > .eslintrc.json
-      - run: eslint "js/*.js"
+      - run: npm ci
+      - run: npx eslint "js/*.js"
 
   basic-checks:
     name: Basic Checks
