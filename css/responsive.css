@@ -548,14 +548,14 @@
     }
     
     h1, h2, h3 {
-        page-break-after: avoid;
+        break-after: avoid;
     }
     
     .chart-container {
-        page-break-inside: avoid;
+        break-inside: avoid;
     }
     
     table {
-        page-break-inside: avoid;
+        break-inside: avoid;
     }
 } 
